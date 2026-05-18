@@ -29,7 +29,7 @@ function getMonthStats(completions, goals) {
 
 function StatCard({ label, value, unit, color, wide }) {
   return (
-    <div style={{
+    <div className="stat-card" style={{
       background: 'var(--surface)',
       border: '1px solid var(--border)',
       borderRadius: 14,

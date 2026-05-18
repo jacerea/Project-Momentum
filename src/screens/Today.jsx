@@ -74,12 +74,13 @@ export default function Today() {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 28 }}>
-          {dailyGoals.map(goal => {
+          {dailyGoals.map((goal, index) => {
             const done = isCompletedOn(goal.id, today)
             return (
               <button
                 key={goal.id}
                 onClick={() => toggleCompletion(goal.id)}
+                className="goal-btn stagger-item"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -91,21 +92,27 @@ export default function Today() {
                   color: done ? 'var(--accent-light)' : 'var(--text)',
                   textAlign: 'left',
                   width: '100%',
-                  transition: 'all 0.2s',
+                  // 50ms apart — tight enough to feel snappy, spread enough to see the cascade
+                  animationDelay: `${index * 0.05}s`,
                 }}
               >
-                <div style={{
-                  width: 22,
-                  height: 22,
-                  borderRadius: 7,
-                  border: `2px solid ${done ? 'var(--accent-light)' : 'var(--text-muted)'}`,
-                  background: done ? 'var(--accent-mid)' : 'transparent',
-                  flexShrink: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s',
-                }}>
+                {/* key changes on toggle so the pop animation re-fires each time */}
+                <div
+                  key={String(done)}
+                  className={done ? 'check-pop' : ''}
+                  style={{
+                    width: 22,
+                    height: 22,
+                    borderRadius: 7,
+                    border: `2px solid ${done ? 'var(--accent-light)' : 'var(--text-muted)'}`,
+                    background: done ? 'var(--accent-mid)' : 'transparent',
+                    flexShrink: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'background 0.2s, border-color 0.2s',
+                  }}
+                >
                   {done && (
                     <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                       <path d="M2 6L5 9L10 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -117,7 +124,7 @@ export default function Today() {
                   fontWeight: 500,
                   textDecoration: done ? 'line-through' : 'none',
                   opacity: done ? 0.6 : 1,
-                  transition: 'all 0.2s',
+                  transition: 'opacity 0.2s, text-decoration 0.2s',
                 }}>
                   {goal.title}
                 </span>
@@ -147,6 +154,7 @@ export default function Today() {
         <button
           type="submit"
           disabled={!newTitle.trim()}
+          className="quick-add-btn"
           style={{
             padding: '13px 20px',
             background: newTitle.trim() ? 'var(--accent-mid)' : 'var(--surface2)',
@@ -155,7 +163,6 @@ export default function Today() {
             color: newTitle.trim() ? 'white' : 'var(--text-muted)',
             fontWeight: 700,
             fontSize: 20,
-            transition: 'all 0.2s',
             lineHeight: 1,
           }}
         >

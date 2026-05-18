@@ -70,6 +70,7 @@ export default function Goals() {
                 key={t}
                 type="button"
                 onClick={() => setType(t)}
+                className="type-btn"
                 style={{
                   flex: 1,
                   padding: '9px 4px',
@@ -79,7 +80,6 @@ export default function Goals() {
                   color: type === t ? 'white' : 'var(--text-muted)',
                   fontSize: 12,
                   fontWeight: 600,
-                  transition: 'all 0.18s',
                 }}
               >
                 {t}
@@ -89,6 +89,7 @@ export default function Goals() {
           <button
             type="submit"
             disabled={!title.trim()}
+            className="submit-btn"
             style={{
               padding: '13px',
               background: title.trim() ? 'var(--accent-mid)' : 'var(--surface2)',
@@ -97,7 +98,6 @@ export default function Goals() {
               color: title.trim() ? 'white' : 'var(--text-muted)',
               fontWeight: 700,
               fontSize: 15,
-              transition: 'all 0.2s',
             }}
           >
             Add Goal
@@ -151,9 +151,10 @@ export default function Goals() {
                 </span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {items.map(goal => (
+                {items.map((goal, index) => (
                   <div
                     key={goal.id}
+                    className="goal-item-card stagger-item"
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -162,6 +163,8 @@ export default function Goals() {
                       border: '1px solid var(--border)',
                       borderRadius: 12,
                       gap: 14,
+                      // same stagger as Today — items fan in top to bottom each time the screen enters
+                      animationDelay: `${index * 0.05}s`,
                     }}
                   >
                     <div style={{
@@ -177,6 +180,7 @@ export default function Goals() {
                     </span>
                     <button
                       onClick={() => deleteGoal(goal.id)}
+                      className="delete-btn"
                       style={{
                         background: 'none',
                         border: 'none',
@@ -185,10 +189,7 @@ export default function Goals() {
                         display: 'flex',
                         alignItems: 'center',
                         borderRadius: 6,
-                        transition: 'color 0.2s',
                       }}
-                      onMouseEnter={e => e.currentTarget.style.color = 'var(--danger)'}
-                      onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
                     >
                       <Trash2 size={15} />
                     </button>

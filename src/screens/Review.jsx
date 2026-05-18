@@ -75,7 +75,7 @@ export default function Review() {
             const allDone = done === total && total > 0
 
             return (
-              <div key={date} style={{
+              <div key={date} className="day-card" style={{
                 background: 'var(--surface)',
                 border: `1px solid ${allDone ? 'var(--accent)' : 'var(--border)'}`,
                 borderRadius: 14,

@@ -28,6 +28,7 @@ export default function BottomNav() {
         <NavLink
           key={to}
           to={to}
+          className="nav-item"
           style={({ isActive }) => ({
             flex: 1,
             display: 'flex',
@@ -46,7 +47,7 @@ export default function BottomNav() {
         >
           {({ isActive }) => (
             <>
-              <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} />
+              <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} className="nav-icon" />
               {label}
             </>
           )}
