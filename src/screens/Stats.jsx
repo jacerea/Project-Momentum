@@ -1,20 +1,7 @@
 import { useGoals } from '../hooks/useGoals'
 import DonutChart from '../components/DonutChart'
-
-function getStreak(completions) {
-  if (completions.length === 0) return 0
-  let streak = 0
-  const d = new Date()
-  while (true) {
-    const dateStr = d.toISOString().slice(0, 10)
-    const hasCompletion = completions.some(c => c.date === dateStr)
-    // starts from today, so if nothing's been checked off today the streak is already broken
-    if (!hasCompletion) break
-    streak++
-    d.setDate(d.getDate() - 1)
-  }
-  return streak
-}
+import HeatmapCalendar from '../components/HeatmapCalendar'
+import { ShieldCheck } from 'lucide-react'
 
 function getMonthStats(completions, goals) {
   const now = new Date()
@@ -27,7 +14,7 @@ function getMonthStats(completions, goals) {
   return { completed, totalPossible, rate }
 }
 
-function StatCard({ label, value, unit, color, wide }) {
+function StatCard({ label, value, unit, color, wide, children }) {
   return (
     <div className="stat-card" style={{
       background: 'var(--surface)',
@@ -50,7 +37,7 @@ function StatCard({ label, value, unit, color, wide }) {
       }}>
         {value}
       </div>
-      <div>
+      <div style={{ flex: 1 }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
           {label}
         </div>
@@ -58,6 +45,7 @@ function StatCard({ label, value, unit, color, wide }) {
           {unit}
         </div>
       </div>
+      {children}
     </div>
   )
 }
@@ -72,25 +60,81 @@ function LegendItem({ color, label, value }) {
   )
 }
 
-export default function Stats() {
-  const { goals, completions } = useGoals()
+function SectionHeader({ title, subtitle }) {
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--text)' }}>{title}</h2>
+      {subtitle && <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{subtitle}</p>}
+    </div>
+  )
+}
 
-  const streak = getStreak(completions)
+export default function Stats() {
+  const {
+    goals, completions, today,
+    getDailyGoals, isCompletedOn,
+    freezeCount, freezeDay, isDayFrozen,
+    getStreak,
+  } = useGoals()
+
+  const streak = getStreak()
   const { completed, totalPossible, rate } = getMonthStats(completions, goals)
   const incomplete = Math.max(0, totalPossible - completed)
-
   const currentMonth = new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' })
+
+  // Check if yesterday is unprotected and the streak dropped because of it
+  const yesterday = (() => {
+    const d = new Date()
+    d.setDate(d.getDate() - 1)
+    return d.toISOString().slice(0, 10)
+  })()
+  const dailyGoals = getDailyGoals()
+  const yesterdayMissed = dailyGoals.length > 0
+    && !dailyGoals.some(g => isCompletedOn(g.id, yesterday))
+    && !isDayFrozen(yesterday)
+  const canUseFreeze = yesterdayMissed && freezeCount > 0
+
+  function handleExport() {
+    const data = { goals, completions, exportedAt: new Date().toISOString(), version: 1 }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `momentum-backup-${today}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
 
   return (
     <div className="screen">
-      <h1 style={{ fontSize: 30, fontWeight: 800, marginBottom: 6, letterSpacing: '-0.5px' }}>
-        Stats
-      </h1>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
+        <h1 style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-0.5px' }}>Stats</h1>
+        <button
+          onClick={handleExport}
+          style={{
+            padding: '8px 14px',
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 8,
+            color: 'var(--text-secondary)',
+            fontSize: 13,
+            fontWeight: 500,
+            cursor: 'pointer',
+            fontFamily: 'var(--font-body)',
+            transition: 'color 0.15s, border-color 0.15s',
+          }}
+        >
+          Export data
+        </button>
+      </div>
       <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 28 }}>
         {currentMonth}
       </p>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+      {/* Stat cards */}
+      <div className="stats-grid" style={{ display: 'grid', gap: 12, marginBottom: 12 }}>
         <StatCard
           label="Current streak"
           value={streak}
@@ -104,6 +148,12 @@ export default function Stats() {
           color="#b07dd4"
         />
         <StatCard
+          label="Streak freezes"
+          value={freezeCount}
+          unit={freezeCount === 1 ? 'shield available' : 'shields available'}
+          color="#e8a838"
+        />
+        <StatCard
           label="Success rate"
           value={`${rate}%`}
           unit="daily goals this month"
@@ -112,6 +162,67 @@ export default function Stats() {
         />
       </div>
 
+      {/* Freeze banner — only visible if yesterday was missed and user has a freeze */}
+      {canUseFreeze && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 16,
+          background: 'rgba(232, 168, 56, 0.08)',
+          border: '1px solid rgba(232, 168, 56, 0.3)',
+          borderRadius: 12,
+          padding: '14px 18px',
+          marginBottom: 28,
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <ShieldCheck size={18} color="#e8a838" />
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
+                You missed yesterday
+              </p>
+              <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 1 }}>
+                Use a streak shield to protect your streak
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => freezeDay(yesterday)}
+            style={{
+              padding: '8px 16px',
+              background: '#e8a838',
+              border: 'none',
+              borderRadius: 8,
+              color: '#0d1117',
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: 'pointer',
+              fontFamily: 'var(--font-body)',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+            }}
+          >
+            Use shield
+          </button>
+        </div>
+      )}
+
+      {/* Activity heatmap */}
+      <div style={{
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderRadius: 18,
+        padding: '22px 24px 20px',
+        marginBottom: 20,
+      }}>
+        <SectionHeader
+          title="Activity"
+          subtitle="Daily goal completions over the past 16 weeks"
+        />
+        <HeatmapCalendar completions={completions} dailyGoals={dailyGoals} />
+      </div>
+
+      {/* Monthly donut */}
       <div style={{
         background: 'var(--surface)',
         border: '1px solid var(--border)',

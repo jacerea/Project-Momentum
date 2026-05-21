@@ -8,51 +8,47 @@ const navItems = [
   { to: '/stats', label: 'Stats', icon: BarChart2 },
 ]
 
-export default function BottomNav() {
+export default function TopNav() {
   return (
-    <nav style={{
+    <header style={{
       position: 'fixed',
-      bottom: 0,
-      left: '50%',
-      transform: 'translateX(-50%)',
-      width: '100%',
-      maxWidth: 'var(--max-width)',
+      top: 0,
+      left: 0,
+      right: 0,
       height: 'var(--nav-height)',
       background: 'var(--surface)',
-      borderTop: '1px solid var(--border)',
+      borderBottom: '1px solid var(--border)',
       display: 'flex',
       alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '0 40px',
       zIndex: 100,
     }}>
-      {navItems.map(({ to, label, icon: Icon }) => (
-        <NavLink
-          key={to}
-          to={to}
-          className="nav-item"
-          style={({ isActive }) => ({
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: 4,
-            textDecoration: 'none',
-            color: isActive ? 'var(--accent-light)' : 'var(--text-muted)',
-            fontSize: 11,
-            fontFamily: 'var(--font-body)',
-            fontWeight: 500,
-            letterSpacing: '0.03em',
-            transition: 'color 0.2s',
-            paddingBottom: 4,
-          })}
-        >
-          {({ isActive }) => (
-            <>
-              <Icon size={20} strokeWidth={isActive ? 2.5 : 1.8} className="nav-icon" />
-              {label}
-            </>
-          )}
-        </NavLink>
-      ))}
-    </nav>
+      <span style={{
+        fontFamily: 'var(--font-heading)',
+        fontWeight: 800,
+        fontSize: 18,
+        color: 'var(--accent-light)',
+        letterSpacing: '-0.3px',
+      }}>
+        Momentum
+      </span>
+      <nav style={{ display: 'flex', gap: 4 }}>
+        {navItems.map(({ to, label, icon: Icon }) => (
+          <NavLink
+            key={to}
+            to={to}
+            className={({ isActive }) => `top-nav-link${isActive ? ' active' : ''}`}
+          >
+            {({ isActive }) => (
+              <>
+                <Icon size={16} strokeWidth={isActive ? 2.5 : 1.8} />
+                <span className="nav-label">{label}</span>
+              </>
+            )}
+          </NavLink>
+        ))}
+      </nav>
+    </header>
   )
 }
